@@ -90,10 +90,12 @@ int generateNote() {
 
 void playMelody() {
   println("Melody played.");
+  sender.send("/play_gen_m", 1);
 }
 
 void stopMelody() {
   // Implement the logic to stop the melody
   println("Melody stopped.");
+  sender.send("/play_gen_m", 0);
   // Add your stopping logic here
 }
