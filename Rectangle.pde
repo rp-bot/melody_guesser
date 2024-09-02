@@ -1,7 +1,6 @@
-
-
 class Rectangle {
-
+  boolean isCorrectNote;
+  int note;
   float x, y, w, h;
   boolean isClicked = false;
 
@@ -11,6 +10,8 @@ class Rectangle {
     this.y = y;
     this.w = w;
     this.h = h;
+    this.isCorrectNote = isCorrectNote;
+    this.note = note;
   }
 
 
@@ -27,7 +28,7 @@ class Rectangle {
   void checkClick(boolean clickedState) {
     if (mouseX >x && mouseX < x+w && mouseY >y && mouseY<y+h) {
       isClicked = clickedState;
-      if (clickedState) {
+      if (isClicked) {
         sender.send("/test", 40);
       }
     }
