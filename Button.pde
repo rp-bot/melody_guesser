@@ -12,6 +12,7 @@ class Button {
   }
 
   void display() {
+    //rectMode(CENTER);
     fill(255);
     rect(x, y, w, h);
     fill(0);
