@@ -4,14 +4,14 @@ import java.util.HashMap;
 
 OscP5 oscP5;
 NetAddress maxAddress;
-SendMessage sender;
+
 
 // UI-related variables
 int tile_width = 140, tile_height = 250, starting_x = 20;
 int numRectangles = 4;
 Rectangle[] rectangles = new Rectangle[numRectangles];
 Button[] lockInButtons = new Button[numRectangles];
-Button playButton, startGameButton, notesSoFarButton;
+Button playButton, startGameButton, notesSoFarButton, micButton;
 
 // Game state variables
 int[] melody = new int[8];
@@ -23,6 +23,9 @@ boolean isMelodyGenerated = false;
 boolean isGameStarted = false;
 boolean isPlaying = false;
 boolean isPlayButtonEnabled = true;
+boolean isMicOn = false;
+boolean isBackgroundGreen = false;
+
 int playButtonClickCount = 0;
 String statusMessage = "";
 
@@ -32,10 +35,10 @@ HashMap<Integer, String> midiToNoteName = new HashMap<Integer, String>();
 void setup() {
   // Set up the window size
   size(720, 1080);
-  
+
   // Initialize the dictionary that maps MIDI numbers to note names
   initializeNoteDictionary();
-  
+
   // Initialize rectangles and lock-in buttons for user input
   for (int i = 0; i < numRectangles; i++) {
     rectangles[i] = new Rectangle(starting_x + (i * 180), height - 200, tile_width, tile_height, 0, false);
@@ -46,13 +49,20 @@ void setup() {
   playButton = new Button(width - 120, 20, 100, 100, "Play\nFull\nMelody");
   startGameButton = new Button(20, 20, 120, 50, "Start Game");
   notesSoFarButton = new Button(20, 80, 150, 50, "Notes So Far");
+  micButton = new Button(width - 120, 150, 100, 50, "Mic Off");
 
   // Initialize the sender for OSC messages
-  sender = new SendMessage("127.0.0.1", 7400);
+  oscP5 = new OscP5(this, 12000); // Listen on port 12000
+  maxAddress = new NetAddress("127.0.0.1", 7400);
 }
 
 void draw() {
-  background(34, 32, 32); // Set the background color
+  //oscEvent();
+  if (isBackgroundGreen) {
+    background(0, 255, 0); // Green background
+  } else {
+    background(34, 32, 32); // Default background
+  }
 
   // Display game elements if the game is not over
   if (!isGameOver) {
@@ -60,7 +70,7 @@ void draw() {
       rectangles[i].display();
       lockInButtons[i].display();
     }
-    
+
     textSize(24); // Set text size for the UI
     startGameButton.display();
     fill(255); // Set text color to white
@@ -69,11 +79,13 @@ void draw() {
     // Show play and notes buttons, game status, and chances if the game has started
     if (isGameStarted) {
       playButton.display();
+      micButton.display();
       notesSoFarButton.display();
       fill(255, 0, 0); // Set color for chances text
       text("Lives: " + chances, 250, 40);
       textAlign(LEFT);
       fill(255);
+      text("Use Mic to\nguess the\ncorrect note", width - 120, 250);
       text(statusMessage, width / 2, (height / 2) - 200);
       text(getCorrectGuessesText(), 20, height / 2);
     }
@@ -105,12 +117,18 @@ void mousePressed() {
   }
 
   // Check if the "Notes So Far" button is clicked
-  if (notesSoFarButton.isClicked(mouseX, mouseY)) sender.send("/notes_so_far", 1);
+  if (notesSoFarButton.isClicked(mouseX, mouseY)) sendOscMessage("/notes_so_far", 1);
 
   // Check if the start game button is clicked
   if (startGameButton.isClicked(mouseX, mouseY)) {
     generateMelody(); // Generate a new melody
     startGame(); // Start the game
+  }
+  
+  if (micButton.isClicked(mouseX, mouseY)) {
+    isMicOn = !isMicOn; // Toggle the mic state
+    micButton.label = isMicOn ? "Mic On" : "Mic Off"; // Update button label
+    sendOscMessage("/mic", isMicOn ? 1 : 0); // Send 1 if mic is on, 0 if off
   }
 
   // Process guesses if the game is ongoing
@@ -135,7 +153,7 @@ void generateMelody() {
   // Loop to generate an 8-note melody
   for (int i = 0; i < 8; i++) {
     melody[i] = generateNote(); // Generate a random note in the E major scale
-    sender.send("/gen_melody", melody[i]); // Send each note to the receiver via OSC
+    sendOscMessage("/gen_melody", melody[i]); // Send each note to the receiver via OSC
   }
   isMelodyGenerated = true; // Mark that the melody has been generated
 }
@@ -166,7 +184,7 @@ void checkGuess(int rectIndex) {
   // Check if the guessed note is correct
   if (rectangles[rectIndex].note == melody[currentGuessIndex]) {
     statusMessage = "Correct guess!"; // Update the status message
-    sender.send("/guessed_melody", melody[currentGuessIndex]); // Send guessed note via OSC
+    sendOscMessage("/guessed_melody", melody[currentGuessIndex]); // Send guessed note via OSC
     currentGuessIndex++; // Move to the next note
 
     // Check if the player has guessed all notes
@@ -190,15 +208,14 @@ void checkGuess(int rectIndex) {
 
 int generateNote() {
   int[] scaleNotes = {
+    52, 54, 56, 57, 59, 61, 63, 64,
     64, 66, 68, 69, 71, 73, 75, 76, // Two octaves above original
-    76, 78, 80, 81, 83, 85, 87, 88, 
-    88, 90, 92, 93, 95, 97, 99, 100 
   };
   return scaleNotes[(int)random(scaleNotes.length)]; // Randomly return a note from the scale
 }
 
 void playMelody() {
-  sender.send("/play_gen_m", 1); // Send OSC message to play the generated melody
+  sendOscMessage("/play_gen_m", 1); // Send OSC message to play the generated melody
 }
 
 String getCorrectGuessesText() {
@@ -210,27 +227,66 @@ String getCorrectGuessesText() {
 }
 
 void initializeNoteDictionary() {
-  // Map MIDI numbers to their corresponding note names
-  midiToNoteName.put(64, "E");
-  midiToNoteName.put(66, "F#");
-  midiToNoteName.put(68, "G#");
-  midiToNoteName.put(69, "A");
-  midiToNoteName.put(71, "B");
-  midiToNoteName.put(73, "C#");
-  midiToNoteName.put(75, "D#");
-  midiToNoteName.put(76, "E");
-  midiToNoteName.put(78, "F#");
-  midiToNoteName.put(80, "G#");
-  midiToNoteName.put(81, "A");
-  midiToNoteName.put(83, "B");
-  midiToNoteName.put(85, "C#");
-  midiToNoteName.put(87, "D#");
-  midiToNoteName.put(88, "E");
-  midiToNoteName.put(90, "F#");
-  midiToNoteName.put(92, "G#");
-  midiToNoteName.put(93, "A");
-  midiToNoteName.put(95, "B");
-  midiToNoteName.put(97, "C#");
-  midiToNoteName.put(99, "D#");
-  midiToNoteName.put(100, "E");
+  // Map MIDI numbers to their corresponding note names with octave numbers
+  midiToNoteName.put(52, "E3");
+  midiToNoteName.put(54, "F#3");
+  midiToNoteName.put(56, "G#3");
+  midiToNoteName.put(57, "A3");
+  midiToNoteName.put(59, "B3");
+  midiToNoteName.put(61, "C#4");
+  midiToNoteName.put(63, "D#4");
+  midiToNoteName.put(64, "E4"); // Start of original octave (E4)
+  midiToNoteName.put(66, "F#4");
+  midiToNoteName.put(68, "G#4");
+  midiToNoteName.put(69, "A4");
+  midiToNoteName.put(71, "B4");
+  midiToNoteName.put(73, "C#5");
+  midiToNoteName.put(75, "D#5");
+  midiToNoteName.put(76, "E5"); // Start of the next octave (E5)
+  midiToNoteName.put(78, "F#5");
+  midiToNoteName.put(80, "G#5");
+  midiToNoteName.put(81, "A5");
+  midiToNoteName.put(83, "B5");
+  midiToNoteName.put(85, "C#6");
+  midiToNoteName.put(87, "D#6");
+  midiToNoteName.put(88, "E6"); // Start of the next octave (E6)
+  midiToNoteName.put(90, "F#6");
+  midiToNoteName.put(92, "G#6");
+  midiToNoteName.put(93, "A6");
+  midiToNoteName.put(95, "B6");
+  midiToNoteName.put(97, "C#7");
+  midiToNoteName.put(99, "D#7");
+  midiToNoteName.put(100, "E7");
+}
+
+
+void sendOscMessage(String messageAddress, int value) {
+  OscMessage msg = new OscMessage(messageAddress);
+  msg.add(value);
+  oscP5.send(msg, maxAddress);
+}
+
+void oscEvent(OscMessage theOscMessage) {
+  // Check the address pattern of the received message
+  if (theOscMessage.checkAddrPattern("/test")) {
+    // Assuming the message from Max is a float
+    float receivedValue = theOscMessage.get(0).floatValue();
+ 
+
+    // Convert the correct MIDI note to frequency
+    int correctMidiNote = melody[currentGuessIndex]; 
+    float correctFrequency = midiToFrequency(correctMidiNote); // Convert to frequency
+
+    // Check if the received value is within +/-1 of the correct frequency
+    if (receivedValue >= correctFrequency - 5 && receivedValue <= correctFrequency + 5 && isGameStarted) {
+      isBackgroundGreen = true; // Set background to green
+    } else {
+      isBackgroundGreen = false; // Set background to default color
+    }
+  }
+}
+
+// Function to convert MIDI note number to frequency in Hertz
+float midiToFrequency(int midiNote) {
+  return 440 * pow(2, (midiNote - 69) / 12.0);
 }

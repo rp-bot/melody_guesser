@@ -32,7 +32,7 @@ class Rectangle {
     if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
       isClicked = clickedState;  // Update the clicked state
       if (isClicked) {
-        sender.send("/play_n", note);  // Send OSC message to play the note
+        sendOscMessage("/play_n", note);  // Send OSC message to play the note
       
       }
     }
