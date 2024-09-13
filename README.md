@@ -7,6 +7,10 @@ When the ‘Start Game’ button is clicked a melody is generated and the game l
 player has 3 lives to guess the correct next note. Lives reset each time the player gets a correct
 note. The player can audition the melody that they have guessed, how many ever times they want.
 
+## Features
+- 4 buttons to audition notes
+- An input microphone button
+
 ## _processing_
 
 Processing handles most of the game logic. It makes handling a loop very convenient. In this case
