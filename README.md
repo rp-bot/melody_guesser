@@ -7,6 +7,8 @@ When the ‘Start Game’ button is clicked a melody is generated and the game l
 player has 3 lives to guess the correct next note. Lives reset each time the player gets a correct
 note. The player can audition the melody that they have guessed, how many ever times they want.
 
+![maxpat](maxpat.jpg)
+
 ## Features
 - 4 buttons to audition notes
 - An input microphone button
