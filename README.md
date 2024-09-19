@@ -7,19 +7,38 @@ When the ‘Start Game’ button is clicked a melody is generated and the game l
 player has 3 lives to guess the correct next note. Lives reset each time the player gets a correct
 note. The player can audition the melody that they have guessed, how many ever times they want.
 
+## Instructions (max):
+
+1. Start maxpatch turn on ADC and turn up volume in top right corner
+
+_in processing >_
+
+2. Click Start Game, Melody gets generated, and game loop begins.
+3. Click Play Full Melody to audition the entire generated melody. Make notes if you want to,
+   you only get 5 turns.
+4. Guess the first note and so on by auditioning the 4 options on the bottom of the screen.
+5. Click Lock In to lock in your guess. Be careful, you only have 3 lives for each guess.
+
 ![maxpat](maxpat.jpg)
 
-## Instructions:
+## Instructions (ChucK):
 
-1. Click Start Game, Melody gets generated, and game loop begins.
-2. Click Play Full Melody to audition the entire generated melody. Make notes if you want to,
+1. Start chuck VM, add new Shred to the VM
+
+_in processing >_
+
+2. Click Start Game, Melody gets generated, and game loop begins.
+3. Click Play Full Melody to audition the entire generated melody. Make notes if you want to,
    you only get 5 turns.
-3. Guess the first note and so on by auditioning the 4 options on the bottom of the screen.
-4. Click Lock In to lock in your guess. Be careful, you only have 3 lives for each guess.
+4. Guess the first note and so on by auditioning the 4 options on the bottom of the screen.
+5. Click Lock In to lock in your guess. Be careful, you only have 3 lives for each guess.
+
+![](chucK.png)
 
 ## Features
-- 4 buttons to audition notes
-- An input microphone button
+
+-   4 buttons to audition notes
+-   An input microphone button
 
 ## _processing_
 
@@ -41,6 +60,5 @@ messages are then routed through the ‘route’ object.
 The goal of this game is to both challenge the player as well as strengthen our pitch detection.
 People with perfect pitch perhaps be able to memorize the pattern easily. Can the rest of us who do
 not have perfect pitch level up? The DGD1 type this game caters to is most likely Conqueror.
-
 
 ## Good Luck.
