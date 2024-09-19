@@ -52,8 +52,8 @@ void setup() {
   micButton = new Button(width - 120, 150, 100, 50, "Mic Off");
 
   // Initialize the sender for OSC messages
-  oscP5 = new OscP5(this, 12000); // Listen on port 12000
-  maxAddress = new NetAddress("127.0.0.1", 7400);
+  oscP5 = new OscP5(this, 9001); // Listen on port 12000
+  maxAddress = new NetAddress("127.0.0.1", 9000);
 }
 
 void draw() {
@@ -153,8 +153,16 @@ void generateMelody() {
   // Loop to generate an 8-note melody
   for (int i = 0; i < 8; i++) {
     melody[i] = generateNote(); // Generate a random note in the E major scale
-    sendOscMessage("/gen_melody", melody[i]); // Send each note to the receiver via OSC
+    //sendOscMessage("/gen_melody", melody[i]); // Send each note to the receiver via OSC
   }
+  
+  OscMessage melody_message = new OscMessage("/gen_melody");
+  for (int note : melody) {
+    melody_message.add(note);
+  }
+  
+  oscP5.send(melody_message, maxAddress);
+  
   isMelodyGenerated = true; // Mark that the melody has been generated
 }
 
@@ -268,7 +276,9 @@ void sendOscMessage(String messageAddress, int value) {
 
 void oscEvent(OscMessage theOscMessage) {
   // Check the address pattern of the received message
-  if (theOscMessage.checkAddrPattern("/test")) {
+  if (theOscMessage.checkAddrPattern("/mic_freq")) {
+    
+    println("recieved");
     // Assuming the message from Max is a float
     float receivedValue = theOscMessage.get(0).floatValue();
  
